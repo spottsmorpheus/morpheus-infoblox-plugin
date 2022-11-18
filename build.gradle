@@ -34,7 +34,7 @@ configurations {
 }
 
 dependencies {
-	provided "com.morpheusdata:morpheus-plugin-api:0.13.4-SNAPSHOT"
+	provided "com.morpheusdata:morpheus-plugin-api:0.13.4"
 	provided "org.codehaus.groovy:groovy-all:$groovyVersion"
 	implementation 'commons-beanutils:commons-beanutils:1.9.3'
 	implementation "org.slf4j:slf4j-api:$slf4jVersion"
@@ -42,7 +42,7 @@ dependencies {
 	implementation 'commons-net:commons-net:3.6'
 
 	// Include morpheus-core and it's dependencies
-	testImplementation "com.morpheusdata:morpheus-plugin-api:0.13.4-SNAPSHOT"
+	testImplementation "com.morpheusdata:morpheus-plugin-api:0.13.4"
 	testImplementation 'io.reactivex.rxjava2:rxjava:2.2.0'
 	testImplementation 'org.apache.httpcomponents:httpclient:4.5.3'
 	testImplementation 'org.apache.httpcomponents:httpcore:4.4.5'
@@ -137,9 +137,6 @@ publishing {
 	}
 }
 
-tasks.withType(com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
-	destinationDirectory = file("$rootDir/plugins")
-}
 
 test {
 	testLogging {
