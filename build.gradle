@@ -19,7 +19,6 @@ apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'asset-pipeline'
 
 group = 'com.morpheusdata'
-version = '1.1.0'
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
@@ -81,7 +80,7 @@ jar {
 				'Morpheus-Color': '#ffffff',
 				'Morpheus-Labels': 'Plugin, Networking, Network',
 				'Morpheus-Repo': 'https://github.com/gomorpheus/morpheus-plugin-core',
-				'Morpheus-Min-Appliance-Version': "5.5.2"
+				'Morpheus-Min-Appliance-Version': "6.0.0"
 		)
 	}
 }
