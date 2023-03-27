@@ -764,7 +764,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			if(poolServer.serviceMode == 'dhcp' && networkPoolIp.macAddress) {
 				body = [
 						name             : shortHostname,
-						view             : networkView,
+						network_view             : networkView,
 						ipv4addrs        : [
 								[configure_for_dhcp: true, mac: networkPoolIp.macAddress, ipv4addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]
 						],
@@ -773,7 +773,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			} else {
 				body = [
 						name             : shortHostname,
-						view             : networkView,
+						network_view             : networkView,
 						ipv4addrs        : [
 								[configure_for_dhcp: false, ipv4addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]
 						],
