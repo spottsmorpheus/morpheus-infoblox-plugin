@@ -774,26 +774,39 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			}
 			def body
 			def networkView = networkPool.externalId.tokenize('/')[3]
-			if(poolServer.serviceMode == 'dhcp' && networkPoolIp.macAddress) {
-				body = [
-						name             : shortHostname,
-						network_view             : networkView,
-						ipv4addrs        : [
-								[configure_for_dhcp: true, mac: networkPoolIp.macAddress, ipv4addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]
-						],
+			if (networkPool.type.code == 'infoblox') {
+				if(poolServer.serviceMode == 'dhcp' && networkPoolIp.macAddress) {
+					body = [
+						name: shortHostname,
+						network_view: networkView,
+						ipv4addrs: [[configure_for_dhcp: true, mac: networkPoolIp.macAddress, ipv4addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]],
 						configure_for_dns: false
-				]
+					]
+				} else {
+					body = [
+						name: shortHostname,
+						network_view: networkView,
+						ipv4addrs: [[configure_for_dhcp: false, ipv4addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]],
+						configure_for_dns: false
+					]
+				}
 			} else {
-				body = [
-						name             : shortHostname,
-						network_view             : networkView,
-						ipv4addrs        : [
-								[configure_for_dhcp: false, ipv4addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]
-						],
+				if(poolServer.serviceMode == 'dhcp' && networkPoolIp.macAddress) {
+					body = [
+						name: shortHostname,
+						network_view: networkView,
+						ipv6addrs: [[configure_for_dhcp: true, mac: networkPoolIp.macAddress, ipv6addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]],
 						configure_for_dns: false
-				]
+					]
+				} else {
+					body = [
+						name: shortHostname,
+						network_view: networkView,
+						ipv6addrs: [[configure_for_dhcp: false, ipv6addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]],
+						configure_for_dns: false
+					]
+				}
 			}
-
 			def extraAttributes
 			if (poolServer.configMap?.extraAttributes) {
 				extraAttributes = generateExtraAttributes(poolServer, [username: networkPoolIp.createdBy?.username, userId: networkPoolIp.createdBy?.id, dateCreated: MorpheusUtils.formatDate(new Date())])
@@ -806,8 +819,13 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			if (results.success) {
 				def ipPath = results.content.substring(1, results.content.length() - 1)
 				def ipResults = getItem(client, poolServer, ipPath, [:])
+				def newIp
 				log.debug("ip results: {}", ipResults)
-				def newIp = ipResults.results.ipv4addrs?.first()?.ipv4addr
+				if (networkPool.type.code == 'infoblox') {
+					newIp = ipResults.results.ipv4addrs?.first()?.ipv4addr
+				} else {
+					newIp = ipResults.results.ipv6addrs?.first()?.ipv6addr
+				}
 				networkPoolIp.externalId = ipResults.results?.getAt('_ref')
 				networkPoolIp.ipAddress = newIp
 				if(createARecord) {
@@ -821,48 +839,99 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 
 
 				if (createARecord && domain) {
-					apiPath = getServicePath(poolServer.serviceUrl) + 'record:a'
-					body = [
-							name    : hostname,
-							ipv4addr: newIp
-					]
-					if (extraAttributes) {
-						body.extattrs = extraAttributes
-					}
-					results = client.callApi(serviceUrl, apiPath, poolServer.credentialData?.username ?: poolServer.serviceUsername, poolServer.credentialData?.password ?: poolServer.servicePassword, new HttpApiClient.RequestOptions(headers: ['Content-Type': 'application/json'], ignoreSSL: poolServer.ignoreSsl,
-							body: body, contentType: ContentType.APPLICATION_JSON), 'POST')
-					if (!results.success) {
-						log.warn("A Record Creation Failed")
-					} else {
-
-						def aRecordRef = results.content.substring(1, results.content.length() - 1)
-						def domainRecord = new NetworkDomainRecord(networkDomain: domain, networkPoolIp: networkPoolIp, name: hostname, fqdn: hostname, source: 'user', type: 'A', externalId: aRecordRef)
-						domainRecord.content = newIp
-						morpheus.network.domain.record.create(domainRecord).blockingGet()
-						networkPoolIp.internalId = aRecordRef
-					}
-					if (createPtrRecord) {
-						// create PTR Record
-						def ptrName = "${newIp.tokenize('.').reverse().join('.')}.in-addr.arpa.".toString()
-						apiPath = getServicePath(poolServer.serviceUrl) + 'record:ptr'
+					def aRecordRef
+					def domainRecord
+					def ptrName
+					def ptrDomainRecord
+					if (networkPool.type.code == 'infoblox') {
+						apiPath = getServicePath(poolServer.serviceUrl) + 'record:a'
 						body = [
-								name    : ptrName,
-								ptrdname: hostname,
+								name    : hostname,
 								ipv4addr: newIp
 						]
 						if (extraAttributes) {
 							body.extattrs = extraAttributes
 						}
 						results = client.callApi(serviceUrl, apiPath, poolServer.credentialData?.username ?: poolServer.serviceUsername, poolServer.credentialData?.password ?: poolServer.servicePassword, new HttpApiClient.RequestOptions(headers: ['Content-Type': 'application/json'], ignoreSSL: poolServer.ignoreSsl,
-								body: body), 'POST')
+								body: body, contentType: ContentType.APPLICATION_JSON), 'POST')
 						if (!results.success) {
-							log.warn("PTR Record Creation Failed")
+							log.warn("A Record Creation Failed")
 						} else {
-							String prtRecordRef = results.content.substring(1, results.content.length() - 1)
-							def ptrDomainRecord = new NetworkDomainRecord(networkDomain: domain, networkPoolIp: networkPoolIp, name: ptrName, fqdn: hostname, source: 'user', type: 'PTR', externalId: prtRecordRef)
-							morpheus.network.domain.record.create(ptrDomainRecord).blockingGet()
-							log.info("got PTR record: {}", results)
-							networkPoolIp.ptrId = prtRecordRef
+
+							aRecordRef = results.content.substring(1, results.content.length() - 1)
+							domainRecord = new NetworkDomainRecord(networkDomain: domain, networkPoolIp: networkPoolIp, name: hostname, fqdn: hostname, source: 'user', type: 'A', externalId: aRecordRef)
+							domainRecord.content = newIp
+							morpheus.network.domain.record.create(domainRecord).blockingGet()
+							networkPoolIp.internalId = aRecordRef
+						}
+						if (createPtrRecord) {
+							// create PTR Record
+							ptrName = "${newIp.tokenize('.').reverse().join('.')}.in-addr.arpa.".toString()
+							apiPath = getServicePath(poolServer.serviceUrl) + 'record:ptr'
+							body = [
+									name    : ptrName,
+									ptrdname: hostname,
+									ipv4addr: newIp
+							]
+							if (extraAttributes) {
+								body.extattrs = extraAttributes
+							}
+							results = client.callApi(serviceUrl, apiPath, poolServer.credentialData?.username ?: poolServer.serviceUsername, poolServer.credentialData?.password ?: poolServer.servicePassword, new HttpApiClient.RequestOptions(headers: ['Content-Type': 'application/json'], ignoreSSL: poolServer.ignoreSsl,
+									body: body), 'POST')
+							if (!results.success) {
+								log.warn("PTR Record Creation Failed")
+							} else {
+								String prtRecordRef = results.content.substring(1, results.content.length() - 1)
+								ptrDomainRecord = new NetworkDomainRecord(networkDomain: domain, networkPoolIp: networkPoolIp, name: ptrName, fqdn: hostname, source: 'user', type: 'PTR', externalId: prtRecordRef)
+								morpheus.network.domain.record.create(ptrDomainRecord).blockingGet()
+								log.info("got PTR record: {}", results)
+								networkPoolIp.ptrId = prtRecordRef
+							}
+						}
+					} else {
+						apiPath = getServicePath(poolServer.serviceUrl) + 'record:aaaa'
+						body = [
+								name    : hostname,
+								ipv6addr: newIp
+						]
+						if (extraAttributes) {
+							body.extattrs = extraAttributes
+						}
+						results = client.callApi(serviceUrl, apiPath, poolServer.credentialData?.username ?: poolServer.serviceUsername, poolServer.credentialData?.password ?: poolServer.servicePassword, new HttpApiClient.RequestOptions(headers: ['Content-Type': 'application/json'], ignoreSSL: poolServer.ignoreSsl,
+								body: body, contentType: ContentType.APPLICATION_JSON), 'POST')
+						if (!results.success) {
+							log.warn("A Record Creation Failed")
+						} else {
+
+							aRecordRef = results.content.substring(1, results.content.length() - 1)
+							domainRecord = new NetworkDomainRecord(networkDomain: domain, networkPoolIp: networkPoolIp, name: hostname, fqdn: hostname, source: 'user', type: 'AAAA', externalId: aRecordRef)
+							domainRecord.content = newIp
+							morpheus.network.domain.record.create(domainRecord).blockingGet()
+							networkPoolIp.internalId = aRecordRef
+						}
+						if (createPtrRecord) {
+							// create PTR Record
+							ptrName = "${newIp.tokenize('.').reverse().join('.')}.in-addr.arpa.".toString()
+							apiPath = getServicePath(poolServer.serviceUrl) + 'record:ptr'
+							body = [
+									name    : ptrName,
+									ptrdname: hostname,
+									ipv6addr: newIp
+							]
+							if (extraAttributes) {
+								body.extattrs = extraAttributes
+							}
+							results = client.callApi(serviceUrl, apiPath, poolServer.credentialData?.username ?: poolServer.serviceUsername, poolServer.credentialData?.password ?: poolServer.servicePassword, new HttpApiClient.RequestOptions(headers: ['Content-Type': 'application/json'], ignoreSSL: poolServer.ignoreSsl,
+									body: body), 'POST')
+							if (!results.success) {
+								log.warn("PTR Record Creation Failed")
+							} else {
+								String prtRecordRef = results.content.substring(1, results.content.length() - 1)
+								ptrDomainRecord = new NetworkDomainRecord(networkDomain: domain, networkPoolIp: networkPoolIp, name: ptrName, fqdn: hostname, source: 'user', type: 'PTR', externalId: prtRecordRef)
+								morpheus.network.domain.record.create(ptrDomainRecord).blockingGet()
+								log.info("got PTR record: {}", results)
+								networkPoolIp.ptrId = prtRecordRef
+							}
 						}
 					}
 					networkPoolIp = morpheus.network.pool.poolIp.save(networkPoolIp)?.blockingGet()
@@ -1141,7 +1210,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			return morpheus.network.pool.listById(poolIdents.collect{it.id})
 		}.flatMap { NetworkPool pool ->
 			def listResults = listHostRecords(client, poolServer, pool, opts)
-			if (listResults.success) {
+			if (listResults.success && listResults.data != null) {
 				List<Map> apiItems = listResults.data as List<Map>
 				Observable<NetworkPoolIpIdentityProjection> poolIps = morpheus.network.pool.poolIp.listIdentityProjections(pool.id)
 				SyncTask<NetworkPoolIpIdentityProjection, Map, NetworkPoolIp> syncTask = new SyncTask<NetworkPoolIpIdentityProjection, Map, NetworkPoolIp>(poolIps, apiItems)
