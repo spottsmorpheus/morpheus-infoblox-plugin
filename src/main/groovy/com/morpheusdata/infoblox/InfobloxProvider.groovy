@@ -866,7 +866,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 						}
 						if (createPtrRecord) {
 							// create PTR Record
-							ptrName = "${newIp.tokenize('.').reverse().join('.')}.in-addr.arpa.".toString()
+							ptrName = "${newIp.tokenize('.').reverse().join('.')}.in-addr.arpa".toString()
 							apiPath = getServicePath(poolServer.serviceUrl) + 'record:ptr'
 							body = [
 									name    : ptrName,
@@ -911,7 +911,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 						}
 						if (createPtrRecord) {
 							// create PTR Record
-							ptrName = "${newIp.tokenize('.').reverse().join('.')}.in-addr.arpa.".toString()
+							ptrName = "${newIp.tokenize('.').reverse().join('.')}.in-addr.arpa".toString()
 							apiPath = getServicePath(poolServer.serviceUrl) + 'record:ptr'
 							body = [
 									name    : ptrName,
