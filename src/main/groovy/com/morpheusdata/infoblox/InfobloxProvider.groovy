@@ -1296,7 +1296,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			}
 		}
 		if(ipsToUpdate.size() > 0) {
-			morpheus.network.pool.poolIp.save(ipsToUpdate)
+			morpheus.network.pool.poolIp.save(ipsToUpdate).blockingGet()
 		}
 	}
 
