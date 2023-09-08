@@ -78,7 +78,7 @@ jar {
 				'Morpheus-Logo': 'assets/infoblox.svg',
 				'Morpheus-Logo-Dark': 'assets/infoblox-dark.svg',
 				'Morpheus-Color': '#ffffff',
-				'Morpheus-Labels': 'Plugin, Networking, Network',
+				'Morpheus-Labels': 'plugin, networking, ipam, dns',
 				'Morpheus-Repo': 'https://github.com/gomorpheus/morpheus-plugin-core',
 				'Morpheus-Min-Appliance-Version': "6.0.0"
 		)
