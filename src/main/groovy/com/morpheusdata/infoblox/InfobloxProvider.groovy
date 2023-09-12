@@ -147,7 +147,8 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 	}
 
 	ServiceResponse<NetworkPoolServer> initializeNetworkPoolServer(NetworkPoolServer poolServer, Map opts) {
-		log.info("initializeNetworkPoolServer: ${poolServer.dump()}")
+		log.info("initializeNetworkPoolServer {} with id {}", poolServer.name, poolServer.id)
+		log.debug("initializeNetworkPoolServer: {}", poolServer.dump())
 		def rtn = new ServiceResponse()
 		try {
 			if(poolServer) {
@@ -160,7 +161,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			rtn.error = "initializeNetworkPoolServer error: ${e}"
 			log.error("initializeNetworkPoolServer error: ${e}", e)
 		}
-		log.info(rtn.dump())
+		log.debug("initializeNetworkPoolServer results: {}",rtn.dump())
 		return rtn
 	}
 
