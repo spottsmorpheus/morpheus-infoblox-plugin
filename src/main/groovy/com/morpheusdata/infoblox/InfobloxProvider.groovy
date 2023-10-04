@@ -478,7 +478,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 	// Cache Zones methods
 	def cacheZoneRecords(HttpApiClient client, NetworkPoolServer poolServer, Map opts) {
 
-		morpheus.network.domain.listIdentityProjections(poolServer.integration.id).flatMap {NetworkDomainIdentityProjection domain ->
+		morpheus.network.domain.listIdentityProjections(poolServer.integration.id).concatMap {NetworkDomainIdentityProjection domain ->
 			Completable.mergeArray(cacheZoneDomainRecords(client,poolServer,domain,'A',opts),
 				cacheZoneDomainRecords(client,poolServer, domain, 'AAAA', opts),
 				cacheZoneDomainRecords(client,poolServer, domain, 'PTR', opts),
@@ -488,7 +488,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			).toObservable().subscribeOn(Schedulers.io())
 		}.doOnError{ e ->
 			log.error("cacheZoneRecords error: ${e}", e)
-		}.subscribe()
+		}.blockingSubscribe()
 	}
 
 	//cacheZoneDomainRecords
@@ -1207,9 +1207,9 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 
 	// cacheIpAddressRecords
 	void cacheIpAddressRecords(HttpApiClient client, NetworkPoolServer poolServer, Map opts) {
-		morpheus.network.pool.listIdentityProjections(poolServer.id).buffer(50).flatMap { Collection<NetworkPoolIdentityProjection> poolIdents ->
+		morpheus.network.pool.listIdentityProjections(poolServer.id).buffer(50).concatMap { Collection<NetworkPoolIdentityProjection> poolIdents ->
 			return morpheus.network.pool.listById(poolIdents.collect{it.id})
-		}.flatMap { NetworkPool pool ->
+		}.concatMap { NetworkPool pool ->
 			def listResults = listHostRecords(client, poolServer, pool, opts)
 			if (listResults.success && listResults.data != null) {
 				List<Map> apiItems = listResults.data as List<Map>
@@ -1240,7 +1240,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			}
 		}.doOnError{ e ->
 			log.error("cacheIpRecords error: ${e}", e)
-		}.subscribe()
+		}.blockingSubscribe()
 
 	}
 
