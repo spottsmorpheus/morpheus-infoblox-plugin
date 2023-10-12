@@ -27,11 +27,11 @@ import com.morpheusdata.util.MorpheusUtils
 import groovy.json.JsonSlurper
 import groovy.text.SimpleTemplateEngine
 import groovy.util.logging.Slf4j
-import io.reactivex.Completable
-import io.reactivex.Single
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.core.Scheduler
 import org.apache.http.entity.ContentType
-import io.reactivex.Observable
+import io.reactivex.rxjava3.core.Observable
 
 @Slf4j
 class InfobloxProvider implements IPAMProvider, DNSProvider {
