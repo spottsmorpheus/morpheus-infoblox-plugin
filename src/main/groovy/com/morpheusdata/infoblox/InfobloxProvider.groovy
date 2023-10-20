@@ -29,7 +29,7 @@ import groovy.text.SimpleTemplateEngine
 import groovy.util.logging.Slf4j
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Single
-import io.reactivex.rxjava3.core.Scheduler
+import io.reactivex.rxjava3.schedulers.Schedulers
 import org.apache.http.entity.ContentType
 import io.reactivex.rxjava3.core.Observable
 
