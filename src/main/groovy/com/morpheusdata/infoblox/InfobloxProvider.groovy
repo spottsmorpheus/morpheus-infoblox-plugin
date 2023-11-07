@@ -399,6 +399,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			log.info("listZoneResults: {}", listResults)
 			if (listResults.success && listResults.data != null) {
 				List apiItems = listResults.data as List<Map>
+				apiItems = apiItems.findAll{it.fqdn != '.' && it.fqdn}
 				Observable<NetworkDomainIdentityProjection> domainRecords = morpheus.network.domain.listIdentityProjections(poolServer.integration.id)
 
 				SyncTask<NetworkDomainIdentityProjection,Map,NetworkDomain> syncTask = new SyncTask(domainRecords, apiItems as Collection<Map>)
