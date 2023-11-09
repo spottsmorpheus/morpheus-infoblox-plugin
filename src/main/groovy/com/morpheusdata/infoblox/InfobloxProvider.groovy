@@ -775,7 +775,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 				}
 			}
 			def body
-			def networkView = networkPool.externalId.tokenize('/')[3]
+			def networkView = URLDecoder.decode(networkPool.externalId.tokenize('/')[3])
 			if (networkPool.type.code == 'infoblox') {
 				if(poolServer.serviceMode == 'dhcp' && networkPoolIp.macAddress) {
 					body = [
