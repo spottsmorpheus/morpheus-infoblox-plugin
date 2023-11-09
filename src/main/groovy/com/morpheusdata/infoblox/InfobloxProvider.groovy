@@ -775,7 +775,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 				}
 			}
 			def body
-			def networkView = networkPool.externalId.tokenize('/')[3]
+			def networkView = URLDecoder.decode(networkPool.externalId.tokenize('/')[3])
 			if (networkPool.type.code == 'infoblox') {
 				if(poolServer.serviceMode == 'dhcp' && networkPoolIp.macAddress) {
 					body = [
@@ -1306,7 +1306,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 	ServiceResponse listHostRecords(HttpApiClient client, NetworkPoolServer poolServer, NetworkPool networkPool, Map opts) {
 		def rtn = new ServiceResponse()
 		rtn.data = []
-		def networkView = networkPool.externalId.tokenize('/')[3]
+		def networkView = URLDecoder.decode(networkPool.externalId.tokenize('/')[3])
 		def serviceUrl = cleanServiceUrl(poolServer.serviceUrl) //ipv4address?network=10.10.10.0/24
 		def apiPath
 		if (networkPool.type.code == 'infoblox') {
