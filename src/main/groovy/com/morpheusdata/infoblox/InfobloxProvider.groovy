@@ -774,6 +774,8 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 					shortHostname = hostname.substring(0,suffixIndex)
 				}
 			}
+			def configureForDns = (poolServer.getConfigProperty("configureForDns") && poolServer.getConfigProperty("configureForDns") == "on")
+			log.info("createHost - checking out IPAddress, configure_for_dns = ${configureForDns}")
 			def body
 			def networkView = URLDecoder.decode(networkPool.externalId.tokenize('/')[3])
 			if (networkPool.type.code == 'infoblox') {
@@ -782,14 +784,14 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 						name: shortHostname,
 						network_view: networkView,
 						ipv4addrs: [[configure_for_dhcp: true, mac: networkPoolIp.macAddress, ipv4addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]],
-						configure_for_dns: false
+						configure_for_dns: configureForDns
 					]
 				} else {
 					body = [
 						name: shortHostname,
 						network_view: networkView,
 						ipv4addrs: [[configure_for_dhcp: false, ipv4addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]],
-						configure_for_dns: false
+						configure_for_dns: configureForDns
 					]
 				}
 			} else {
@@ -798,14 +800,14 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 						name: shortHostname,
 						network_view: networkView,
 						ipv6addrs: [[configure_for_dhcp: true, mac: networkPoolIp.macAddress, ipv6addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]],
-						configure_for_dns: false
+						configure_for_dns: configureForDns
 					]
 				} else {
 					body = [
 						name: shortHostname,
 						network_view: networkView,
 						ipv6addrs: [[configure_for_dhcp: false, ipv6addr: networkPoolIp.ipAddress ?: "func:nextavailableip:${networkPool.externalId}".toString()]],
-						configure_for_dns: false
+						configure_for_dns: configureForDns
 					]
 				}
 			}
@@ -822,7 +824,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 				def ipPath = results.content.substring(1, results.content.length() - 1)
 				def ipResults = getItem(client, poolServer, ipPath, [:])
 				def newIp
-				log.debug("ip results: {}", ipResults)
+				log.info("createHost - ip results: {}", ipResults.dump())
 				if (networkPool.type.code == 'infoblox') {
 					newIp = ipResults.results.ipv4addrs?.first()?.ipv4addr
 				} else {
@@ -1398,11 +1400,12 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 				new OptionType(code: 'infoblox.throttleRate', name: 'Throttle Rate', inputType: OptionType.InputType.NUMBER, defaultValue: 0, fieldName: 'serviceThrottleRate', fieldLabel: 'Throttle Rate', fieldContext: 'domain', displayOrder: 4),
 				new OptionType(code: 'infoblox.ignoreSsl', name: 'Ignore SSL', inputType: OptionType.InputType.CHECKBOX, defaultValue: 0, fieldName: 'ignoreSsl', fieldLabel: 'Disable SSL SNI Verification', fieldContext: 'domain', displayOrder: 5),
 				new OptionType(code: 'infoblox.inventoryExisting', name: 'Inventory Existing', inputType: OptionType.InputType.CHECKBOX, defaultValue: 0, fieldName: 'inventoryExisting', fieldLabel: 'Inventory Existing', fieldContext: 'config', displayOrder: 6),
-				new OptionType(code: 'infoblox.networkFilter', name: 'Network Filter', inputType: OptionType.InputType.TEXT, fieldName: 'networkFilter', fieldLabel: 'Network Filter', fieldContext: 'domain', displayOrder: 7),
-				new OptionType(code: 'infoblox.zoneFilter', name: 'Zone Filter', inputType: OptionType.InputType.TEXT, fieldName: 'zoneFilter', fieldLabel: 'Zone Filter', fieldContext: 'domain', displayOrder: 8),
-				new OptionType(code: 'infoblox.tenantMatch', name: 'Tenant Match Attribute', inputType: OptionType.InputType.TEXT, fieldName: 'tenantMatch', fieldLabel: 'Tenant Match Attribute', fieldContext: 'domain', displayOrder: 9),
-				new OptionType(code: 'infoblox.ipMode', name: 'IP Mode', inputType: OptionType.InputType.SELECT, fieldName: 'serviceMode', fieldLabel: 'IP Mode', fieldContext: 'domain', optionSource: 'infobloxModeTypeList' , displayOrder: 10),
-				new OptionType(code: 'infoblox.extraAttributes', name: 'Extra Attributes', inputType: OptionType.InputType.TEXTAREA, fieldName: 'extraAttributes', fieldLabel: 'Extra Attributes', fieldContext: 'config', displayOrder: 11, helpText: "Accepts a JSON input of custom attributes that can be saved on Host Record in Infoblox. These Must be first defined as extra attributes in Infoblox and values can be injected for the user creating the record and the date of assignment. The available injectable attributes are: userId, username, and dateCreated. They can be injected with <%=%>.")
+				new OptionType(code: 'infoblox.configureForDns', name: 'Configure for DNS', inputType: OptionType.InputType.CHECKBOX, defaultValue: 0, fieldName: 'configureForDns', fieldLabel: 'Configure Host for DNS', fieldContext: 'config', displayOrder: 7, helpText: 'associates host with a parent zone (configure_for_dns)'),
+				new OptionType(code: 'infoblox.networkFilter', name: 'Network Filter', inputType: OptionType.InputType.TEXT, fieldName: 'networkFilter', fieldLabel: 'Network Filter', fieldContext: 'domain', displayOrder: 8),
+				new OptionType(code: 'infoblox.zoneFilter', name: 'Zone Filter', inputType: OptionType.InputType.TEXT, fieldName: 'zoneFilter', fieldLabel: 'Zone Filter', fieldContext: 'domain', displayOrder: 9),
+				new OptionType(code: 'infoblox.tenantMatch', name: 'Tenant Match Attribute', inputType: OptionType.InputType.TEXT, fieldName: 'tenantMatch', fieldLabel: 'Tenant Match Attribute', fieldContext: 'domain', displayOrder: 10),
+				new OptionType(code: 'infoblox.ipMode', name: 'IP Mode', inputType: OptionType.InputType.SELECT, fieldName: 'serviceMode', fieldLabel: 'IP Mode', fieldContext: 'domain', optionSource: 'infobloxModeTypeList' , displayOrder: 11),
+				new OptionType(code: 'infoblox.extraAttributes', name: 'Extra Attributes', inputType: OptionType.InputType.TEXTAREA, fieldName: 'extraAttributes', fieldLabel: 'Extra Attributes', fieldContext: 'config', displayOrder: 12, helpText: "Accepts a JSON input of custom attributes that can be saved on Host Record in Infoblox. These Must be first defined as extra attributes in Infoblox and values can be injected for the user creating the record and the date of assignment. The available injectable attributes are: userId, username, and dateCreated. They can be injected with <%=%>.")
 		]
 	}
 
