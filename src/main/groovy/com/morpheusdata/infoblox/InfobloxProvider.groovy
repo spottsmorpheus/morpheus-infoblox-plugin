@@ -115,7 +115,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 			return rtn //
 		}
 		HttpApiClient infobloxClient = new HttpApiClient()
-		def networkProxy = morpheusContext.async.setting.getGlobalNetworkProxy()
+		def networkProxy = morpheusContext.services.setting.getGlobalNetworkProxy()
 		infobloxClient.networkProxy = networkProxy
 		try {
 			def apiUrl = cleanServiceUrl(poolServer.serviceUrl)
@@ -197,7 +197,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 	ServiceResponse<NetworkDomainRecord> createRecord(AccountIntegration integration, NetworkDomainRecord record, Map opts) {
 		ServiceResponse<NetworkDomainRecord> rtn = new ServiceResponse<>()
 		HttpApiClient client = new HttpApiClient()
-		client.networkProxy = morpheusContext.async.setting.getGlobalNetworkProxy()
+		client.networkProxy = morpheusContext.services.setting.getGlobalNetworkProxy()
 		def poolServer = morpheus.network.getPoolServerByAccountIntegration(integration).blockingGet()
 
 		try {
@@ -312,7 +312,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 				morpheus.network.getPoolServerByAccountIntegration(integration).doOnSuccess({ poolServer ->
 					def serviceUrl = cleanServiceUrl(poolServer.serviceUrl)
 					HttpApiClient client = new HttpApiClient()
-					client.networkProxy = morpheusContext.async.setting.getGlobalNetworkProxy()
+					client.networkProxy = morpheusContext.services.setting.getGlobalNetworkProxy()
 					try {
 						def apiPath
 
@@ -349,7 +349,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 		log.debug("refreshNetworkPoolServer: {}", poolServer.dump())
 		HttpApiClient infobloxClient = new HttpApiClient()
 		infobloxClient.throttleRate = poolServer.serviceThrottleRate
-		def networkProxy = morpheusContext.async.setting.getGlobalNetworkProxy()
+		def networkProxy = morpheusContext.services.setting.getGlobalNetworkProxy()
 		infobloxClient.networkProxy = networkProxy
 		try {
 			def apiUrl = cleanServiceUrl(poolServer.serviceUrl)
@@ -764,7 +764,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 	@Override
 	ServiceResponse<NetworkPoolIp> createHostRecord(NetworkPoolServer poolServer, NetworkPool networkPool, NetworkPoolIp networkPoolIp, NetworkDomain domain = null, Boolean createARecord = false, Boolean createPtrRecord = false) {
 		HttpApiClient client = new HttpApiClient();
-		client.networkProxy = morpheusContext.async.setting.getGlobalNetworkProxy()
+		client.networkProxy = morpheusContext.services.setting.getGlobalNetworkProxy()
 		try {
 			def serviceUrl = cleanServiceUrl(poolServer.serviceUrl)
 			def apiPath = getServicePath(poolServer.serviceUrl) + 'record:host' //networkPool.externalId
@@ -959,7 +959,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 	@Override // FIXME: This method signature is different than infobloxnps
 	ServiceResponse updateHostRecord(NetworkPoolServer poolServer, NetworkPool networkPool, NetworkPoolIp networkPoolIp) {
 		HttpApiClient client = new HttpApiClient()
-		client.networkProxy = morpheusContext.async.setting.getGlobalNetworkProxy()
+		client.networkProxy = morpheusContext.services.setting.getGlobalNetworkProxy()
 		def serviceUrl = cleanServiceUrl(poolServer.serviceUrl)
 		try {
 
@@ -990,7 +990,7 @@ class InfobloxProvider implements IPAMProvider, DNSProvider {
 //	@Override
 	ServiceResponse deleteHostRecord(NetworkPool networkPool, NetworkPoolIp poolIp, Boolean deleteAssociatedRecords) {
 		HttpApiClient client = new HttpApiClient();
-		client.networkProxy = morpheusContext.async.setting.getGlobalNetworkProxy()
+		client.networkProxy = morpheusContext.services.setting.getGlobalNetworkProxy()
 		def poolServer = morpheus.network.getPoolServerById(networkPool.poolServer.id).blockingGet()
 		try {
 			if(poolIp.externalId) {
