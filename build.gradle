@@ -26,6 +26,9 @@ ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
 repositories {
 	mavenLocal()
 	mavenCentral()
+	maven { url "https://nexus.bertramlabs.com/content/repositories/snapshots" }
+	maven { url "https://nexus.bertramlabs.com/content/repositories/releases" }
+	maven { url "https://nexus.bertramlabs.com/content/repositories/publicReleases" }
 }
 
 configurations {
@@ -33,7 +36,7 @@ configurations {
 }
 
 dependencies {
-	provided "com.morpheusdata:morpheus-plugin-api:0.13.4"
+	provided "com.morpheusdata:morpheus-plugin-api:$plugincore"
 	provided "org.codehaus.groovy:groovy-all:$groovyVersion"
 	implementation 'commons-beanutils:commons-beanutils:1.9.3'
 	implementation "org.slf4j:slf4j-api:$slf4jVersion"
@@ -41,14 +44,13 @@ dependencies {
 	implementation 'commons-net:commons-net:3.6'
 
 	// Include morpheus-core and it's dependencies
-	testImplementation "com.morpheusdata:morpheus-plugin-api:0.13.4"
+	testImplementation "com.morpheusdata:morpheus-plugin-api:$plugincore"
 	testImplementation 'io.reactivex.rxjava2:rxjava:2.2.0'
 	testImplementation 'org.apache.httpcomponents:httpclient:4.5.3'
 	testImplementation 'org.apache.httpcomponents:httpcore:4.4.5'
 	testImplementation "org.slf4j:slf4j-parent:$slf4jVersion"
 
 	testImplementation "org.codehaus.groovy:groovy-all:$groovyVersion"
-	testImplementation "com.morpheusdata:morpheus-test-provider:0.13.4-SNAPSHOT"
 	testImplementation 'net.bytebuddy:byte-buddy:1.9.3'
 	testImplementation 'org.objenesis:objenesis:2.6'
 	testImplementation "org.spockframework:spock-core:$spockVersion"
@@ -80,7 +82,7 @@ jar {
 				'Morpheus-Color': '#ffffff',
 				'Morpheus-Labels': 'plugin, networking, ipam, dns',
 				'Morpheus-Repo': 'https://github.com/gomorpheus/morpheus-plugin-core',
-				'Morpheus-Min-Appliance-Version': "6.0.0"
+				'Morpheus-Min-Appliance-Version': minversion
 		)
 	}
 }
